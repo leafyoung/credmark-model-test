@@ -1,0 +1,10 @@
+matplotlib
+streamlit
+numpy
+pandas
+seaborn
+streamlit_lottie
+requests
+datetime
+altair
+plotly==5.9.0

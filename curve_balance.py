@@ -37,7 +37,7 @@ st.latex(r'''
 ratio = \frac {\prod value_i} {({ \frac {\sum value_i} {n} })^n }
 ''')
 
-gateway = st.selectbox('Gateway', [CREDMARK_GATEWAY, CREDMARK_GATEWAY_LOCAL])
+gateway = st.selectbox('Gateway', [CREDMARK_GATEWAY_LOCAL, CREDMARK_GATEWAY])
 cmf = CmfRun(gateway = gateway, block_number=14836288)
 
 d = st.date_input("CoB", datetime.utcnow().date() - timedelta(days=1))
@@ -64,10 +64,25 @@ curve_pools = ['0x961226b64ad373275130234145b96d100dc0b655',
                 '0x4e0915C88bC70750D68C481540F081fEFaF22273',
                 '0xA5407eAE9Ba41422680e2e00537571bcC53efBfD',]
 
+# 0xCEAF7747579696A2F0bb206a14210e3c9e6fB269
+
+if False:
+    for addr in curve_pools:
+        curves_info = cmf.run_model('compose.map-inputs',
+                                    {'modelSlug': 'curve-fi.pool-info',
+                                    'modelInputs': [{'address':addr}]},
+                                    block_number=block_number)[0]['results']
+        if 'output' not in curves_info[0]:
+            breakpoint()
+
 curves_info = cmf.run_model('compose.map-inputs',
                             {'modelSlug': 'curve-fi.pool-info',
                             'modelInputs': [{'address':addr} for addr in curve_pools]},
                             block_number=block_number)[0]['results']
+
+curves_info = [pif for pif in curves_info if 'output' in pif]
+
+curves_info_sel = st.selectbox('Pool', ['(All)'] + [(pif['output']['tokens_symbol'], pif['output']['address']) for pif in curves_info])
 
 two_pools = [
     {
@@ -77,7 +92,8 @@ two_pools = [
                 pif['output']['balances'][1] * pif['output']['token_prices'][1]['price'])
     }
     for pif in curves_info
-    if len(pif['output']['tokens_symbol']) == 2
+    if 'output' in pif and len(pif['output']['tokens_symbol']) == 2
+    and (curves_info_sel == '(All)' or pif['output']['address'] == curves_info_sel[1])
 ]
 
 three_pools = [
@@ -89,7 +105,8 @@ three_pools = [
                 pif['output']['balances'][2] * pif['output']['token_prices'][2]['price'])
     }
     for pif in curves_info
-    if len(pif['output']['tokens_symbol']) == 3
+    if 'output' in pif and len(pif['output']['tokens_symbol']) == 3
+    and (curves_info_sel == '(All)' or pif['output']['address'] == curves_info_sel[1])
 ]
 
 four_pools = [
@@ -102,7 +119,8 @@ four_pools = [
                 pif['output']['balances'][3] * pif['output']['token_prices'][3]['price'])
     }
     for pif in curves_info
-    if len(pif['output']['tokens_symbol']) == 4
+    if 'output' in pif and len(pif['output']['tokens_symbol']) == 4
+    and (curves_info_sel == '(All)' or pif['output']['address'] == curves_info_sel[1])
 ]
 
 def plot_pool_n(basis, n_point, pool_n, bal_ratio_func):
